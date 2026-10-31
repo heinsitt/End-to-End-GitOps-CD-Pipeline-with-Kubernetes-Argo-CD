@@ -13,7 +13,7 @@ This project showcases an automated GitOps Continuous Deployment (CD) pipeline f
 - **Orchestration:** Kubernetes
 - **GitOps CD Engine:** Argo CD
 - **Version Control:** GitHub
-- **Environment:** Local K8s Cluster (Docker Desktop / WSL2 Ubuntu)
+- **Environment:** Local K8s Cluster (Docker Desktop / WSL2 Ubuntu 26.04 LTS)
 
 ---
 
