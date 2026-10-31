@@ -5,7 +5,7 @@ This project showcases an automated GitOps Continuous Deployment (CD) pipeline f
 ---
 
 ## 🏛️ Lab Overview & Architecture
-![GitOps Lab Architecture](images/architecture.jpg)
+![GitOps Lab Architecture](readmepic/architecture.jpg)
 ---
 
 ## 🛠️ Tech Stack & Tools
@@ -29,12 +29,12 @@ This project showcases an automated GitOps Continuous Deployment (CD) pipeline f
 
 ### 1. Argo CD Automated Deployment & Health Status
 Argo CD automatically synced and deployed the manifests into the local Kubernetes cluster.
-![Argo CD Healthy Status](images/argocdtreeview.png)
+![Argo CD Healthy Status](readmepic/argocdtreeview.png)
 
 ### 2. Live Scaling Test (GitOps in Action)
 Tested GitOps capability by updating `replicas: 2` to `replicas: 4` in `k8s/deployment.yaml`. Argo CD immediately detected the Git commit and scaled the application pods accordingly without manual cluster intervention.
-![Scaled Replicas Verification](images/replicas2to4.png)
-![Scaled Replicas Verification](images/4pods.png)
+![Scaled Replicas Verification](readmepic/replicas2to4.png)
+![Scaled Replicas Verification](readmepic/4pods.png)
 
 ### 3. Application Verification
 Verified the application pods and nodeport services via `kubectl` and accessed the live app via Port-Forwarding.
