@@ -1,412 +1,728 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hein Sitt Tun — DevOps & GitOps Engineering Portfolio</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --bg: #09090b;
-            --surface: #121215;
-            --surface-border: rgba(255, 255, 255, 0.08);
-            --surface-hover: rgba(255, 255, 255, 0.03);
-            --text-primary: #f4f4f5;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --accent-blue: #3b82f6;
-            --accent-emerald: #10b981;
-            --accent-pink: #ec4899;
-            --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --radius: 12px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font-sans);
-        }
+  <title>End-to-End GitOps CD Pipeline — Kubernetes &amp; Argo CD | Hein Sitt Tun</title>
+  <meta name="description" content="A hands-on GitOps continuous deployment lab: containerised portfolio app on Docker Hub, declarative Kubernetes manifests in Git, and automated sync plus self-healing with Argo CD.">
+  <meta name="author" content="Hein Sitt Tun">
+  <meta name="theme-color" content="#08080b" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fbfbfc" media="(prefers-color-scheme: light)">
 
-        body {
-            background-color: var(--bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-            padding-bottom: 80px;
-        }
+  <!-- Open Graph / social preview -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="End-to-End GitOps CD Pipeline with Kubernetes &amp; Argo CD">
+  <meta property="og:description" content="Docker → GitHub → Argo CD → Kubernetes. A fully automated GitOps delivery lab with declarative scaling and self-healing verification.">
+  <meta property="og:image" content="images/architecture.jpg">
+  <meta property="og:url" content="https://heinsitt.github.io/End-to-End-GitOps-CD-Pipeline-with-Kubernetes-Argo-CD/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="End-to-End GitOps CD Pipeline with Kubernetes &amp; Argo CD">
+  <meta name="twitter:description" content="Docker → GitHub → Argo CD → Kubernetes. A fully automated GitOps delivery lab.">
+  <meta name="twitter:image" content="images/architecture.jpg">
 
-        /* Subtle Grid Background Overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 32px 32px;
-            z-index: -1;
-        }
+  <link rel="canonical" href="https://heinsitt.github.io/End-to-End-GitOps-CD-Pipeline-with-Kubernetes-Argo-CD/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236366f1'/%3E%3Cpath d='M9 21.5 14.5 10h3L23 21.5h-3.2l-.9-2.1h-4.9l-.9 2.1H9zm4.7-4.6h3.1L15.3 13l-1.6 3.9z' fill='white'/%3E%3C/svg%3E">
 
-        header {
-            max-width: 1000px;
-            margin: 80px auto 40px;
-            padding: 0 24px;
-            border-bottom: 1px solid var(--surface-border);
-            padding-bottom: 40px;
-        }
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: var(--accent-emerald);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-bottom: 20px;
-        }
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
 
-        .status-badge span {
-            width: 6px;
-            height: 6px;
-            background: var(--accent-emerald);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent-emerald);
-        }
+  <!-- Design system -->
+  <link rel="stylesheet" href="assets/css/tokens.css">
+  <link rel="stylesheet" href="assets/css/components.css">
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin-bottom: 12px;
-        }
-
-        header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            max-width: 700px;
-        }
-
-        .meta-pills {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            flex-wrap: wrap;
-        }
-
-        .pill {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .pill i {
-            color: var(--text-primary);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        section {
-            margin-top: 48px;
-        }
-
-        h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-primary);
-        }
-
-        h2 i {
-            color: var(--accent-blue);
-        }
-
-        /* Architecture Workflow Cards */
-        .workflow-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-        }
-
-        .workflow-card {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            border-radius: var(--radius);
-            padding: 20px;
-            position: relative;
-        }
-
-        .workflow-card .step-num {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-
-        .workflow-card h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .workflow-card p {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        /* Feature Details Section */
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .detail-box {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            border-radius: var(--radius);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .detail-box h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .detail-box p {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
-
-        /* Terminal Window */
-        .terminal {
-            background: #050507;
-            border: 1px solid var(--surface-border);
-            border-radius: 8px;
-            padding: 14px;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            overflow-x: auto;
-        }
-
-        .terminal .prompt {
-            color: var(--accent-emerald);
-        }
-
-        .terminal .highlight {
-            color: #60a5fa;
-        }
-
-        /* Gallery Grid */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .gallery-item {
-            background: var(--surface);
-            border: 1px solid var(--surface-border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            transition: border-color 0.2s ease;
-        }
-
-        .gallery-item:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-bottom: 1px solid var(--surface-border);
-        }
-
-        .gallery-info {
-            padding: 16px;
-        }
-
-        .gallery-info h4 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .gallery-info p {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        footer {
-            max-width: 1000px;
-            margin: 60px auto 0;
-            padding: 24px;
-            border-top: 1px solid var(--surface-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        footer span {
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            header { margin-top: 40px; }
-        }
-    </style>
+  <script>
+    /* Apply persisted theme before first paint to avoid a flash. */
+    (function () {
+      try {
+        var stored = localStorage.getItem('gitops-theme');
+        var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+        var theme = stored || (prefersLight ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) { /* private mode — keep default */ }
+    })();
+  </script>
 </head>
-<body>
 
-    <header>
-        <div class="status-badge">
-            <span></span> Argo CD Sync Status: Healthy (4 Pod Replicas)
-        </div>
-        <h1>End-to-End GitOps Pipeline</h1>
-        <p>Production-grade continuous deployment showcase utilizing Docker, Kubernetes (Docker Desktop), GitHub, and Argo CD.</p>
-        
-        <div class="meta-pills">
-            <div class="pill"><i class="fa-brands fa-docker"></i> Docker & Hub</div>
-            <div class="pill"><i class="fa-solid fa-server"></i> Kubernetes K8s</div>
-            <div class="pill"><i class="fa-solid fa-octopus-deploy" style="color: #ff007a;"></i> Argo CD</div>
-            <div class="pill"><i class="fa-solid fa-chart-line" style="color: var(--accent-emerald);"></i> Monitoring (Next Phase)</div>
-        </div>
-    </header>
+<body id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
 
-    <div class="container">
+  <!-- ══════════════════════════════════════════════════════ HEADER ══════ -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="#top" aria-label="GitOps Lab — back to top">
+        <span class="brand__mark" aria-hidden="true"><i class="fa-solid fa-infinity"></i></span>
+        <span class="brand__name">GitOps Lab</span>
+        <span class="brand__sep" aria-hidden="true">/</span>
+        <span class="brand__sub">Kubernetes &amp; Argo CD</span>
+      </a>
 
-        <!-- Architecture Workflow Section -->
-        <section>
-            <h2><i class="fa-solid fa-arrows-split-up-and-left"></i> GitOps Workflow Topology</h2>
-            <div class="workflow-grid">
-                <div class="workflow-card">
-                    <div class="step-num">01 / SOURCE</div>
-                    <h3>Code & Manifests</h3>
-                    <p>Developer writes source changes and declarative K8s manifests inside <code>k8s/</code>.</p>
-                </div>
-                <div class="workflow-card">
-                    <div class="step-num">02 / VERSION CONTROL</div>
-                    <h3>GitHub Repository</h3>
-                    <p>Commits pushed to <code>portfolio-01</code> main branch act as the single source of truth.</p>
-                </div>
-                <div class="workflow-card">
-                    <div class="step-num">03 / CONTINUOUS DELIVERY</div>
-                    <h3>Argo CD Sync</h3>
-                    <p>Argo CD controller detects drift and automatically synchronizes cluster configurations.</p>
-                </div>
-                <div class="workflow-card">
-                    <div class="step-num">04 / RUNTIME</div>
-                    <h3>Local K8s Cluster</h3>
-                    <p>Docker Desktop runs active workloads with active self-healing capabilities.</p>
-                </div>
-            </div>
-        </section>
+      <nav class="site-nav" aria-label="Section navigation">
+        <a class="site-nav__link" href="#architecture">Architecture</a>
+        <a class="site-nav__link" href="#workflow">Workflow</a>
+        <a class="site-nav__link" href="#implementation">Implementation</a>
+        <a class="site-nav__link" href="#verification">Verification</a>
+        <a class="site-nav__link" href="#artifacts">Artifacts</a>
+      </nav>
 
-        <!-- Implementation Details Section -->
-        <section>
-            <h2><i class="fa-solid fa-terminal"></i> Core Operations & Verification</h2>
-            <div class="details-grid">
-                
-                <div class="detail-box">
-                    <div>
-                        <h3>Declarative Scaling (2 to 4 Replicas)</h3>
-                        <p>Updated <code>deployment.yaml</code> configurations to scale pod density. Argo CD automatically enforced state matching.</p>
-                    </div>
-                    <div class="terminal">
-                        <span class="prompt">$</span> kubectl get pods<br>
-                        portfolio-deployment-59cff-fh2bb <span class="highlight">1/1 Running</span><br>
-                        portfolio-deployment-59cff-gwzsb <span class="highlight">1/1 Running</span><br>
-                        portfolio-deployment-59cff-xxxx1 <span class="highlight">1/1 Running</span><br>
-                        portfolio-deployment-59cff-xxxx2 <span class="highlight">1/1 Running</span>
-                    </div>
-                </div>
-
-                <div class="detail-box">
-                    <div>
-                        <h3>Self-Healing Engine</h3>
-                        <p>Kubernetes ensures high availability. Manual pod deletions trigger instant reconciliation to maintain desired replica count.</p>
-                    </div>
-                    <div class="terminal">
-                        <span class="prompt">$</span> kubectl delete pod portfolio-deployment-xxx<br>
-                        pod "portfolio-deployment-xxx" deleted<br>
-                        <span class="highlight">-> Desired state enforced: 4 pods active</span>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Visual Proof Gallery -->
-        <section>
-            <h2><i class="fa-solid fa-image"></i> Artifacts & Visual Proof</h2>
-            <div class="gallery-grid">
-                
-                <div class="gallery-item">
-                    <img src="images/argocdtreeview.png" alt="Argo CD Tree View">
-                    <div class="gallery-info">
-                        <h4>Argo CD Tree View</h4>
-                        <p>Live health dashboard displaying sync status and replica linkages.</p>
-                    </div>
-                </div>
-
-                <div class="gallery-item">
-                    <img src="images/localhost8081.png" alt="Live Portfolio">
-                    <div class="gallery-info">
-                        <h4>Production Preview</h4>
-                        <p>App running successfully via local port-forward routing.</p>
-                    </div>
-                </div>
-
-                <div class="gallery-item">
-                    <img src="images/replicas2to4.png" alt="Manifest Config">
-                    <div class="gallery-info">
-                        <h4>GitOps Manifest</h4>
-                        <p>Declarative scaling parameter set in deployment config.</p>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
+      <div class="site-header__actions">
+        <a class="btn btn--ghost btn--sm" href="https://github.com/heinsitt/End-to-End-GitOps-CD-Pipeline-with-Kubernetes-Argo-CD" target="_blank" rel="noopener noreferrer">
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+          <span>Repository</span>
+        </a>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle theme">
+          <i class="fa-solid fa-moon" id="theme-icon" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
+  </header>
 
-    <footer>
-        <p>Designed for <span>Hein Sitt Tun</span> — DevOps Engineering</p>
-        <p style="font-family: var(--font-mono); font-size: 0.75rem;">Status: Operational</p>
-    </footer>
+  <main id="main">
 
+    <!-- ══════════════════════════════════════════════════════ HERO ══════ -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero__eyebrow">
+          <span class="badge badge--success">
+            <span class="dot" aria-hidden="true"></span>
+            Argo CD &middot; Healthy &middot; Synced
+          </span>
+        </div>
+
+        <h1 class="hero__title">
+          End-to-End <em>GitOps</em> Continuous Delivery Pipeline
+        </h1>
+
+        <p class="hero__lead">
+          A hands-on lab that removes manual <code class="code">kubectl apply</code> from the release
+          path entirely. Git is the single source of truth: a commit that changes pod density is
+          detected by Argo CD and reconciled into a running Kubernetes cluster — no operator in the loop.
+        </p>
+
+        <div class="hero__chips">
+          <span class="chip"><i class="fa-brands fa-docker" aria-hidden="true"></i> Docker &amp; Docker Hub</span>
+          <span class="chip"><i class="fa-solid fa-dharmachakra" aria-hidden="true"></i> Kubernetes</span>
+          <span class="chip"><i class="fa-solid fa-octopus-deploy" aria-hidden="true"></i> Argo CD v3.5.6</span>
+          <span class="chip"><i class="fa-brands fa-github" aria-hidden="true"></i> GitHub</span>
+          <span class="chip"><i class="fa-brands fa-linux" aria-hidden="true"></i> WSL2 &middot; Ubuntu</span>
+        </div>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#architecture">
+            <i class="fa-solid fa-diagram-project" aria-hidden="true"></i>
+            View architecture
+          </a>
+          <a class="btn btn--secondary" href="#artifacts">
+            <i class="fa-solid fa-images" aria-hidden="true"></i>
+            Browse artifacts
+          </a>
+        </div>
+
+        <!-- ── Live-state KPI strip ─────────────────────────────────────── -->
+        <div class="kpi-strip" role="list" aria-label="Deployment state summary">
+          <div class="kpi" role="listitem">
+            <span class="kpi__label">Pods ready</span>
+            <span class="kpi__value kpi__value--success">4 / 4</span>
+          </div>
+          <div class="kpi" role="listitem">
+            <span class="kpi__label">Application health</span>
+            <span class="kpi__value kpi__value--success">Healthy</span>
+          </div>
+          <div class="kpi" role="listitem">
+            <span class="kpi__label">Sync status</span>
+            <span class="kpi__value">Synced <small>3400715</small></span>
+          </div>
+          <div class="kpi" role="listitem">
+            <span class="kpi__label">Sync policy</span>
+            <span class="kpi__value kpi__value--accent">Auto</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ ARCHITECTURE ══════ -->
+    <section class="section" id="architecture">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i> 01 / Architecture</p>
+          <h2 class="section__title">System topology</h2>
+          <p class="section__lead">
+            Three cooperating planes: authoring and version control on the left, the GitOps
+            reconciliation loop in the middle, and observability on the right.
+          </p>
+        </div>
+
+        <figure class="figure" data-reveal>
+          <img class="figure__media"
+               src="images/architecture.jpg"
+               alt="Architecture diagram showing a laptop running WSL2 Ubuntu pushing to the portfolio-01 GitHub repository, Argo CD monitoring the manifests and syncing to a local Kubernetes cluster with a four-pod deployment, and a planned Prometheus and Grafana monitoring stack."
+               width="1024" height="559" loading="lazy" decoding="async">
+          <figcaption class="figure__caption">
+            <span><strong>Figure 1.</strong> Development, continuous delivery, and observability planes.</span>
+            <span>Click to enlarge</span>
+          </figcaption>
+        </figure>
+
+        <div class="plane-grid">
+          <article class="plane" style="--plane-accent: var(--accent)" data-reveal>
+            <p class="plane__num">PLANE 01</p>
+            <h3 class="plane__title">Authoring &amp; version control</h3>
+            <p class="plane__text">
+              Source and infrastructure manifests live together, so an application change and the
+              intent to deploy it are one atomic commit.
+            </p>
+            <ul class="plane__list">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> VS Code on Ubuntu via WSL2</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> <code class="code">index.html</code> + <code class="code">Dockerfile</code></li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> <code class="code">k8s/deployment.yaml</code>, <code class="code">service.yaml</code></li>
+            </ul>
+          </article>
+
+          <article class="plane" style="--plane-accent: var(--success)" data-reveal>
+            <p class="plane__num">PLANE 02</p>
+            <h3 class="plane__title">GitOps reconciliation</h3>
+            <p class="plane__text">
+              Argo CD polls the repository, diffs desired state against live state, and applies the
+              delta. Drift is corrected without human intervention.
+            </p>
+            <ul class="plane__list">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Watches <code class="code">portfolio-01</code> @ <code class="code">HEAD</code></li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Path <code class="code">k8s</code> &rarr; namespace <code class="code">default</code></li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Auto-sync + self-heal enabled</li>
+            </ul>
+          </article>
+
+          <article class="plane" style="--plane-accent: var(--warning)" data-reveal>
+            <p class="plane__num">PLANE 03</p>
+            <h3 class="plane__title">Runtime &amp; observability</h3>
+            <p class="plane__text">
+              The workload runs on a local cluster. Metrics collection and dashboards are the
+              explicitly scoped next phase of this lab.
+            </p>
+            <ul class="plane__list">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Docker Desktop Kubernetes</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> 4 replicas behind a NodePort service</li>
+              <li><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> Prometheus + Grafana (planned)</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ WORKFLOW ══════════ -->
+    <section class="section" id="workflow">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-arrows-split-up-and-left" aria-hidden="true"></i> 02 / Workflow</p>
+          <h2 class="section__title">Commit-to-running pipeline</h2>
+          <p class="section__lead">
+            Four stages, one direction of flow. Nothing after stage two is executed by hand.
+          </p>
+        </div>
+
+        <div class="pipeline">
+          <article class="step" data-reveal>
+            <div class="step__badge" aria-hidden="true"><i class="fa-solid fa-code"></i></div>
+            <p class="step__index">01 / Build</p>
+            <h3 class="step__title">Containerise</h3>
+            <p class="step__text">
+              The static site is baked into an <code class="code">nginx:alpine</code> image and tagged
+              <code class="code">heinsitt/portfolio:latest</code>.
+            </p>
+          </article>
+
+          <article class="step" data-reveal>
+            <div class="step__badge" aria-hidden="true"><i class="fa-brands fa-github"></i></div>
+            <p class="step__index">02 / Publish</p>
+            <h3 class="step__title">Push to registries</h3>
+            <p class="step__text">
+              Image layers go to Docker Hub; the manifest change is committed to the
+              <code class="code">portfolio-01</code> repository.
+            </p>
+          </article>
+
+          <article class="step" data-reveal>
+            <div class="step__badge" aria-hidden="true"><i class="fa-solid fa-octopus-deploy"></i></div>
+            <p class="step__index">03 / Detect</p>
+            <h3 class="step__title">Argo CD reconciles</h3>
+            <p class="step__text">
+              The controller compares Git against the cluster, reports
+              <span style="white-space: nowrap">OutOfSync</span>, then applies the difference.
+            </p>
+          </article>
+
+          <article class="step" data-reveal>
+            <div class="step__badge" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></div>
+            <p class="step__index">04 / Enforce</p>
+            <h3 class="step__title">Kubernetes self-heals</h3>
+            <p class="step__text">
+              The ReplicaSet maintains the declared pod count. Deleted pods are replaced
+              automatically to match desired state.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════ IMPLEMENTATION ════════ -->
+    <section class="section" id="implementation">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> 03 / Implementation</p>
+          <h2 class="section__title">How each layer is declared</h2>
+          <p class="section__lead">
+            Every artefact below is a file in Git, not a cluster mutation performed from a shell.
+          </p>
+        </div>
+
+        <div class="split">
+          <!-- Docker build & push -->
+          <article class="feature" data-reveal>
+            <div class="feature__head">
+              <span class="feature__icon" aria-hidden="true"><i class="fa-brands fa-docker"></i></span>
+              <div>
+                <h3 class="feature__title">Image build &amp; distribution</h3>
+                <p class="feature__text">
+                  A two-instruction Dockerfile serves the static site through nginx, keeping the
+                  runtime image small and the build reproducible.
+                </p>
+              </div>
+            </div>
+
+            <div class="terminal">
+              <div class="terminal__bar">
+                <span class="terminal__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="terminal__title">Dockerfile</span>
+                <button class="terminal__copy" type="button" data-copy-target="snippet-dockerfile">
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy</span>
+                </button>
+              </div>
+              <pre class="terminal__body" id="snippet-dockerfile"><code><span class="key">FROM</span> nginx:alpine
+<span class="key">COPY</span> ./ /usr/share/nginx/html</code></pre>
+            </div>
+
+            <div class="terminal">
+              <div class="terminal__bar">
+                <span class="terminal__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="terminal__title">Push to Docker Hub</span>
+                <button class="terminal__copy" type="button" data-copy-target="snippet-push">
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy</span>
+                </button>
+              </div>
+              <pre class="terminal__body" id="snippet-push"><code><span class="prompt">$</span> <span class="cmd">docker build -t heinsitt/portfolio:latest .</span>
+<span class="prompt">$</span> <span class="cmd">docker push heinsitt/portfolio:latest</span>
+<span class="dim">latest: digest: sha256:… size: 1987</span></code></pre>
+            </div>
+          </article>
+
+          <!-- Deployment manifest -->
+          <article class="feature" data-reveal>
+            <div class="feature__head">
+              <span class="feature__icon" aria-hidden="true"><i class="fa-solid fa-file-code"></i></span>
+              <div>
+                <h3 class="feature__title">Declarative workload &amp; declarative scaling</h3>
+                <p class="feature__text">
+                  Capacity is a number in a YAML file. Changing
+                  <code class="code">replicas: 2</code> to <code class="code">replicas: 4</code> and
+                  pushing the commit is the entire scaling operation.
+                </p>
+              </div>
+            </div>
+
+            <div class="terminal">
+              <div class="terminal__bar">
+                <span class="terminal__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="terminal__title">k8s/deployment.yaml</span>
+                <button class="terminal__copy" type="button" data-copy-target="snippet-deployment">
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy</span>
+                </button>
+              </div>
+              <pre class="terminal__body" id="snippet-deployment"><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-deployment
+spec:
+  replicas: <span class="warn">4</span>
+  selector:
+    matchLabels:
+      app: portfolio
+  template:
+    metadata:
+      labels:
+        app: portfolio
+    spec:
+      containers:
+      - name: portfolio
+        image: heinsitt/portfolio:latest
+        ports:
+        - containerPort: 80</code></pre>
+            </div>
+
+            <div class="feature__meta">
+              <span class="badge badge--accent"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Auto-sync</span>
+              <span class="badge badge--success"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Self-heal</span>
+              <span class="badge"><i class="fa-solid fa-cubes" aria-hidden="true"></i> ReplicaSet</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════ VERIFICATION ══════════ -->
+    <section class="section" id="verification">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-terminal" aria-hidden="true"></i> 04 / Verification</p>
+          <h2 class="section__title">Proof, not claims</h2>
+          <p class="section__lead">
+            After the manifest commit, the cluster reported four ready pods and Argo CD reported
+            <code class="code">Synced to HEAD</code> with health <code class="code">Healthy</code>.
+          </p>
+        </div>
+
+        <div class="split">
+          <article class="feature" data-reveal>
+            <div class="feature__head">
+              <span class="feature__icon" aria-hidden="true"><i class="fa-solid fa-cubes"></i></span>
+              <div>
+                <h3 class="feature__title">Post-sync cluster state</h3>
+                <p class="feature__text">
+                  Replica count went from two to four with no manual rollout command —
+                  the extra pods were created by Argo CD applying the new manifest.
+                </p>
+              </div>
+            </div>
+
+            <div class="terminal">
+              <div class="terminal__bar">
+                <span class="terminal__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="terminal__title">kubectl</span>
+                <button class="terminal__copy" type="button" data-copy-target="snippet-pods">
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy</span>
+                </button>
+              </div>
+              <pre class="terminal__body" id="snippet-pods"><code><span class="prompt">$</span> <span class="cmd">kubectl get deployment</span>
+NAME                   READY   UP-TO-DATE   AVAILABLE
+portfolio-deployment   <span class="ok">4/4</span>     4            4
+
+<span class="prompt">$</span> <span class="cmd">kubectl get pods</span>
+NAME                                     READY   STATUS
+portfolio-deployment-59cff89f5-9fgr2     <span class="ok">1/1</span>     <span class="ok">Running</span>
+portfolio-deployment-59cff89f5-fh2bb     <span class="ok">1/1</span>     <span class="ok">Running</span>
+portfolio-deployment-59cff89f5-gwzsb     <span class="ok">1/1</span>     <span class="ok">Running</span>
+portfolio-deployment-59cff89f5-x7kgj     <span class="ok">1/1</span>     <span class="ok">Running</span></code></pre>
+            </div>
+          </article>
+
+          <article class="feature" data-reveal>
+            <div class="feature__head">
+              <span class="feature__icon" aria-hidden="true"><i class="fa-solid fa-network-wired"></i></span>
+              <div>
+                <h3 class="feature__title">Service exposure</h3>
+                <p class="feature__text">
+                  A NodePort service fronts the replica set. The app was verified in a browser
+                  through a port-forward, confirming end-to-end delivery.
+                </p>
+              </div>
+            </div>
+
+            <div class="terminal">
+              <div class="terminal__bar">
+                <span class="terminal__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="terminal__title">kubectl</span>
+                <button class="terminal__copy" type="button" data-copy-target="snippet-svc">
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy</span>
+                </button>
+              </div>
+              <pre class="terminal__body" id="snippet-svc"><code><span class="prompt">$</span> <span class="cmd">kubectl get svc</span>
+NAME                TYPE        CLUSTER-IP     PORT(S)
+kubernetes          ClusterIP   10.96.0.1      443/TCP
+portfolio-service   <span class="key">NodePort</span>    10.96.90.246   <span class="ok">80:32284/TCP</span>
+
+<span class="prompt">$</span> <span class="cmd">kubectl port-forward svc/portfolio-service 8081:80</span>
+Forwarding from 127.0.0.1:8081 -&gt; 80
+Forwarding from [::1]:8081 -&gt; 80
+<span class="ok">Handling connection for 8081</span></code></pre>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout" style="margin-top: var(--space-6)" data-reveal>
+          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          <p class="callout__text">
+            <strong>Scope note.</strong> This lab runs on a local single-node cluster
+            (Docker Desktop Kubernetes). Port-forwarding is a verification mechanism here, not a
+            production ingress strategy — a LoadBalancer controller or Ingress is the correct
+            next step for public exposure.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ ARTIFACTS ═════════ -->
+    <section class="section" id="artifacts">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-images" aria-hidden="true"></i> 05 / Artifacts</p>
+          <h2 class="section__title">Evidence gallery</h2>
+          <p class="section__lead">
+            Captured during the lab run: the Argo CD control plane, the Kubernetes workload, the
+            build pipeline, and the served application. Select any frame to inspect it full size.
+          </p>
+        </div>
+
+        <div class="filters" role="group" aria-label="Filter artifacts by category">
+          <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
+          <button class="filter" type="button" data-filter="architecture" aria-pressed="false">Architecture</button>
+          <button class="filter" type="button" data-filter="argocd" aria-pressed="false">Argo CD</button>
+          <button class="filter" type="button" data-filter="kubernetes" aria-pressed="false">Kubernetes</button>
+          <button class="filter" type="button" data-filter="build" aria-pressed="false">Build &amp; Git</button>
+          <button class="filter" type="button" data-filter="runtime" aria-pressed="false">Runtime</button>
+        </div>
+
+        <div class="gallery" id="gallery">
+
+          <button class="shot" type="button" data-cat="architecture" data-caption="Figure 1 — Development, delivery and observability planes">
+            <span class="shot__media">
+              <img src="images/architecture.jpg" alt="Architecture diagram of the GitOps lab" loading="lazy" decoding="async" width="1024" height="559">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Architecture diagram</span>
+              <span class="shot__desc">Full topology from laptop and GitHub through Argo CD to the cluster.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="argocd" data-caption="Argo CD v3.5.6 — applications dashboard">
+            <span class="shot__media">
+              <img src="images/argocd-applications.png" alt="Argo CD applications dashboard showing portfolio-app Healthy and Synced" loading="lazy" decoding="async" width="1024" height="520">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Argo CD applications</span>
+              <span class="shot__desc">portfolio-app reports Healthy and Synced against the portfolio-01 repo.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="argocd" data-caption="Argo CD tree view — service, deployment and pod linkage">
+            <span class="shot__media">
+              <img src="images/argocd-tree-view.png" alt="Argo CD resource tree view linking portfolio-service, portfolio-deployment and running pods" loading="lazy" decoding="async" width="1024" height="519">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Resource tree view</span>
+              <span class="shot__desc">Service, Deployment and pod lineage with per-pod health.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="argocd" data-caption="Argo CD tree view after scaling — four running pods">
+            <span class="shot__media">
+              <img src="images/argocd-4-pods.png" alt="Argo CD tree view showing four running pods under the deployment" loading="lazy" decoding="async" width="1024" height="514">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Tree view after scale-out</span>
+              <span class="shot__desc">Four pods healthy — the result of a manifest commit, not a manual rollout.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="kubernetes" data-caption="kubectl get pods and kubectl get svc output">
+            <span class="shot__media">
+              <img src="images/kubectl-pods-svc.png" alt="Terminal output of kubectl get pods and kubectl get svc" loading="lazy" decoding="async" width="952" height="623">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Pod &amp; service state</span>
+              <span class="shot__desc">Two running pods and the NodePort service on port 32284.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="kubernetes" data-caption="Replica count growth from two to four pods">
+            <span class="shot__media">
+              <img src="images/scaling-2-to-4.png" alt="Terminal output showing the deployment scaling from two pods to four" loading="lazy" decoding="async" width="870" height="313">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Scale-out 2 &rarr; 4</span>
+              <span class="shot__desc">Two new pods appear after the replica count changes in Git.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="kubernetes" data-caption="Port-forward binding to the portfolio service">
+            <span class="shot__media">
+              <img src="images/kubectl-port-forward.png" alt="Terminal showing kubectl port-forward for the portfolio-service" loading="lazy" decoding="async" width="931" height="618">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Port-forward verification</span>
+              <span class="shot__desc">Local port 8081 bound to the service for browser verification.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="kubernetes" data-caption="k8s/deployment.yaml — replicas set to 4">
+            <span class="shot__media">
+              <img src="images/deployment-manifest.png" alt="deployment.yaml showing replicas set to four" loading="lazy" decoding="async" width="455" height="432">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Declarative manifest</span>
+              <span class="shot__desc">The single-line change that triggered the entire delivery.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="build" data-caption="docker push — image published to Docker Hub">
+            <span class="shot__media">
+              <img src="images/docker-push.png" alt="VS Code terminal showing docker push of the portfolio image to Docker Hub" loading="lazy" decoding="async" width="1024" height="553">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Image pushed to Docker Hub</span>
+              <span class="shot__desc">All layers uploaded; digest recorded for the deployment to pull.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="build" data-caption="GitHub — k8s manifests versioned alongside source">
+            <span class="shot__media">
+              <img src="images/k8s-manifests.png" alt="GitHub repository view of the k8s folder containing deployment.yaml and service.yaml" loading="lazy" decoding="async" width="1024" height="366">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Manifests in Git</span>
+              <span class="shot__desc">deployment.yaml and service.yaml tracked with commit history.</span>
+            </span>
+          </button>
+
+          <button class="shot" type="button" data-cat="runtime" data-caption="Application served through the port-forwarded service">
+            <span class="shot__media">
+              <img src="images/live-app.jpg" alt="The portfolio application rendered in a browser via port-forwarding" loading="lazy" decoding="async" width="1600" height="850">
+              <span class="shot__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+            </span>
+            <span class="shot__body">
+              <span class="shot__title">Delivered application</span>
+              <span class="shot__desc">The containerised site rendering correctly inside the cluster.</span>
+            </span>
+          </button>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ TECH STACK ════════ -->
+    <section class="section" id="stack">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-toolbox" aria-hidden="true"></i> 06 / Stack</p>
+          <h2 class="section__title">Tools used</h2>
+        </div>
+
+        <div class="stack-grid">
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-brands fa-docker" style="color:#2496ed"></i></span>
+            <span>Docker<span class="stack-item__meta">Build &amp; runtime</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-solid fa-cube" style="color:#0db7ed"></i></span>
+            <span>Docker Hub<span class="stack-item__meta">Registry</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-solid fa-dharmachakra" style="color:#326ce5"></i></span>
+            <span>Kubernetes<span class="stack-item__meta">Orchestration</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-solid fa-octopus-deploy" style="color:#ef7b4d"></i></span>
+            <span>Argo CD<span class="stack-item__meta">GitOps CD</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-brands fa-github"></i></span>
+            <span>GitHub<span class="stack-item__meta">Source of truth</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-brands fa-linux" style="color:#f6a623"></i></span>
+            <span>Ubuntu / WSL2<span class="stack-item__meta">Dev environment</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-solid fa-server" style="color:#0db7ed"></i></span>
+            <span>nginx:alpine<span class="stack-item__meta">Web server</span></span>
+          </div>
+          <div class="stack-item">
+            <span class="stack-item__icon" aria-hidden="true"><i class="fa-solid fa-chart-line" style="color:#f46800"></i></span>
+            <span>Prometheus<span class="stack-item__meta">Next phase</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ ROADMAP ═══════════ -->
+    <section class="section" id="roadmap">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow"><i class="fa-solid fa-road" aria-hidden="true"></i> 07 / Scope</p>
+          <h2 class="section__title">Delivered vs. next phase</h2>
+          <p class="section__lead">
+            Deliberately separating what this lab proves from what it defers keeps the claim honest.
+          </p>
+        </div>
+
+        <div class="roadmap">
+          <article class="phase phase--done" data-reveal>
+            <p class="phase__label"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Completed</p>
+            <h3 class="phase__title">Automated delivery loop</h3>
+            <ul class="checklist">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Container image built and published</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Declarative Deployment and Service in Git</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Argo CD auto-sync with health reporting</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Replica scaling committed, not applied</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Self-healing verified against desired state</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Application reached in browser via port-forward</li>
+            </ul>
+          </article>
+
+          <article class="phase" data-reveal>
+            <p class="phase__label"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> Planned</p>
+            <h3 class="phase__title">Observability plane</h3>
+            <ul class="checklist">
+              <li><i class="fa-regular fa-circle" aria-hidden="true"></i> Prometheus metrics collection in the cluster</li>
+              <li><i class="fa-regular fa-circle" aria-hidden="true"></i> Grafana dashboards for pod and node health</li>
+              <li><i class="fa-regular fa-circle" aria-hidden="true"></i> Alerting rules on replica and restart anomalies</li>
+              <li><i class="fa-regular fa-circle" aria-hidden="true"></i> Ingress controller replacing port-forward</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════ FOOTER ══════ -->
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <p class="site-footer__text">
+        Built and documented by <strong>Hein Sitt Tun</strong> &middot; DevOps Engineering Lab
+      </p>
+      <div class="site-footer__links">
+        <a href="https://github.com/heinsitt" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/in/heinsitttun/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://github.com/heinsitt/End-to-End-GitOps-CD-Pipeline-with-Kubernetes-Argo-CD" target="_blank" rel="noopener noreferrer">Source</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════ LIGHTBOX ══════ -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Artifact preview" hidden>
+    <button class="lightbox__close" id="lightbox-close" type="button" aria-label="Close preview">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <figure class="lightbox__figure">
+      <img class="lightbox__img" id="lightbox-img" src="" alt="">
+      <figcaption class="lightbox__caption" id="lightbox-caption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="assets/js/app.js" defer></script>
 </body>
 </html>
